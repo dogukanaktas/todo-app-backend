@@ -22,10 +22,18 @@ dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT;
 app.use(express_1.default.json());
+// Enable CORS
+app.use(function (req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT,DELETE");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+    next();
+});
 // GET ALL TODOS
 app.get("/todos", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const query = yield todo_1.todoModel.find({ isCompleted: true });
-    res.status(200).send(query !== null && query !== void 0 ? query : []);
+    const query = yield todo_1.todoModel.find({ isCompleted: false });
+    console.log('query', query);
+    res.status(200).send(query);
 }));
 // CREATE TODO
 app.post("/todos", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -53,20 +61,23 @@ app.get("/todos/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 }));
 // findByIdAndDelete()
-// app.delete("/todos/:id", async (req: Request, res: Response) => {
-//   const { id } = req.query;
-//   try {
-//     const { acknowledged, deletedCount } = await todoModel.deleteOne({
-//       _id: id,
-//     });
-//     if (!acknowledged) throw new Error("Request is failed!");
-//     if (!deletedCount) return res.status(204);
-//   } catch (err) {
-//     res.status(404);
-//     console.log(err);
-//   }
-//   res.send();
-// });
+app.delete("/todos/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.query;
+    try {
+        const { acknowledged, deletedCount } = yield todo_1.todoModel.deleteOne({
+            _id: id,
+        });
+        if (!acknowledged)
+            throw new Error("Request is failed!");
+        if (!deletedCount)
+            return res.status(204);
+    }
+    catch (err) {
+        res.status(404);
+        console.log(err);
+    }
+    res.send();
+}));
 app.listen(PORT, () => {
     console.log(`⚡️[server]: Server is running at http://localhost:${PORT}`);
 });
