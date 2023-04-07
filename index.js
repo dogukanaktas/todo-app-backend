@@ -17,6 +17,7 @@ const dbConnection_1 = require("./config/dbConnection");
 const todo_1 = require("./models/todo");
 const dotenv_1 = __importDefault(require("dotenv"));
 const helpers_1 = require("./helpers");
+const user_1 = require("./models/user");
 dotenv_1.default.config();
 (0, dbConnection_1.connectDb)();
 const app = (0, express_1.default)();
@@ -29,10 +30,29 @@ app.use(function (req, res, next) {
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
     next();
 });
+// Create a User
+app.post("/user", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { name, surname, age, hobbies } = req.body;
+    try {
+        const user = yield user_1.userModel.create({
+            name,
+            surname,
+            age,
+            hobbies,
+        });
+        res.send(user);
+    }
+    catch (error) {
+        res.status(422).send({
+            error: error.message,
+        });
+        console.log(error.message);
+    }
+}));
 // GET ALL TODOS
 app.get("/todos", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const query = yield todo_1.todoModel.find({ isCompleted: false });
-    console.log('query', query);
+    console.log("query", query);
     res.status(200).send(query);
 }));
 // CREATE TODO

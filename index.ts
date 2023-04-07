@@ -3,6 +3,7 @@ import { connectDb } from "./config/dbConnection";
 import { todoModel } from "./models/todo";
 import dotenv from "dotenv";
 import { isValidID } from "./helpers";
+import { userModel } from "./models/user";
 
 dotenv.config();
 
@@ -26,11 +27,32 @@ app.use(function (req: Request, res: Response, next) {
   next();
 });
 
+// Create a User
+app.post("/user", async (req: Request, res: Response) => {
+  const { name, surname, age, hobbies } = req.body;
+
+  try {
+    const user = await userModel.create({
+      name,
+      surname,
+      age,
+      hobbies,
+    });
+
+    res.send(user);
+  } catch (error) {
+    res.status(422).send({
+      error: error.message,
+    });
+    console.log(error.message);
+  }
+});
+
 // GET ALL TODOS
 app.get("/todos", async (req: Request, res: Response) => {
   const query = await todoModel.find({ isCompleted: false });
-  console.log('query', query)
-  res.status(200).send(query)
+  console.log("query", query);
+  res.status(200).send(query);
 });
 
 // CREATE TODO
