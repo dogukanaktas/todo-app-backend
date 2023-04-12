@@ -6,11 +6,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.todoModel = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const todoSchema = new mongoose_1.default.Schema({
-    todo: {
+    title: {
         type: String,
         required: true,
     },
-    isCompleted: {
+    completed: {
         type: Boolean,
         required: false,
         default: false,
