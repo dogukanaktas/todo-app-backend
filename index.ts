@@ -2,8 +2,7 @@ import express, { Express, Request, Response } from "express";
 import { connectDb } from "./config/dbConnection";
 import { todoModel } from "./models/todo";
 import dotenv from "dotenv";
-import { isValidID } from "./helpers";
-import { userModel } from "./models/user";
+import mongoose, { Error, Mongoose, isValidObjectId } from "mongoose";
 
 dotenv.config();
 
@@ -13,7 +12,7 @@ const app: Express = express();
 const PORT = process.env.PORT;
 
 app.use(express.json());
-// Enable CORS
+//CORS Enable
 app.use(function (req: Request, res: Response, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header(
@@ -27,55 +26,18 @@ app.use(function (req: Request, res: Response, next) {
   next();
 });
 
-// Create a User
-app.post("/user", async (req: Request, res: Response) => {
-  const { name, surname, age, hobbies } = req.body;
-
-  try {
-    const user = await userModel.create({
-      name,
-      surname,
-      age,
-      hobbies,
-    });
-
-    res.send(user);
-  } catch (error) {
-    res.status(422).send({
-      error: error.message,
-    });
-    console.log(error.message);
-  }
-});
-
-// GET ALL TODOS
-app.get("/todos", async (req: Request, res: Response) => {
-  const query = await todoModel.find({ isCompleted: false });
-  console.log("query", query);
+// GET /todos
+app.get("/todos", async (_, res: Response) => {
+  const query = await todoModel.find({});
   res.status(200).send(query);
 });
 
-// CREATE TODO
-app.post("/todos", async (req: Request, res: Response) => {
-  const { todo, isCompleted = false } = req.body;
-
-  if (!todo)
-    return res.status(403).send("Validation Error: Please provide todo field!");
-
-  const response = await todoModel.create({
-    isCompleted,
-    todo,
-  });
-
-  res.status(201).send(response);
-});
-
-// GET TODO
+// GET /todos/:id
 app.get("/todos/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
-    if (!isValidID(id)) return res.status(404).send("Not a valid ID!");
+    if (!isValidObjectId(id)) return res.status(404).send("Not a valid ID!");
 
     const response = await todoModel.findById(id);
     res.status(200).send(response);
@@ -85,17 +47,73 @@ app.get("/todos/:id", async (req: Request, res: Response) => {
   }
 });
 
-// findByIdAndDelete()
-app.delete("/todos/:id", async (req: Request, res: Response) => {
-  const { id } = req.query;
+// POST /todos
+app.post("/todos", async (req: Request, res: Response) => {
+  const { title, completed = false } = req.body;
+
+  if (!title)
+    return res
+      .status(403)
+      .send("Validation Error: Please provide a title field.");
+
+  const response = await todoModel.create({
+    completed,
+    title,
+  });
+
+  res.status(201).send(response);
+});
+
+// PUT /todos/:id
+app.put("/todos/:id", async (req: Request, res: Response) => {
+  const { id } = req.params;
 
   try {
-    const { acknowledged, deletedCount } = await todoModel.deleteOne({
-      _id: id,
+    await todoModel.validate(req.body);
+    const query = await todoModel.findOneAndUpdate({ _id: id }, req.body);
+
+    res.status(200).send(query);
+  } catch (error: any) {
+    res.status(404).json({
+      message: error.message,
+    });
+  }
+});
+
+// DELETE /todos/
+app.delete("/todos/", async (_, res: Response) => {
+  try {
+    const todos = await todoModel.deleteMany({
+      name: /user/,
+    });
+  } catch (error) {
+    res.status(404).json({
+      message: "Cannot delete all todos :(",
+    });
+    console.log(error);
+  }
+});
+
+// DELETE /todos/:id
+app.delete("/todos/:id", async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    if (!isValidObjectId(id))
+      return res.status(404).json({
+        message: `${id} is not a valid ID`,
+      });
+
+    const query = await todoModel.findOneAndDelete({
+      _id: new mongoose.Types.ObjectId(id),
     });
 
-    if (!acknowledged) throw new Error("Request is failed!");
-    if (!deletedCount) return res.status(204);
+    if (!query)
+      return res.status(404).json({
+        message: `There is no todo with this id: ${id}`,
+      });
+
+    res.status(200).json(query);
   } catch (err) {
     res.status(404);
     console.log(err);
@@ -108,11 +126,11 @@ app.listen(PORT, () => {
   console.log(`⚡️[server]: Server is running at http://localhost:${PORT}`);
 });
 
-// GET /todos
-// GET /todos?userId=1
+// GET /todos +
+// GET /todos?userId=1 +
 
 // PUT /todos/1
 // PATCH /todos/1
-// DELETE /todos/1
+// DELETE /todos/1 +
 
 // VALID ID: 6426e6b529f1667bf0313843
