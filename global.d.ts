@@ -4,6 +4,10 @@ namespace NodeJS {
     PORT: string;
     MONGO_URI: string;
   }
+  interface Error {
+    status?: number;
+    message?: string;
+  }
 }
 
 declare interface ObjectIdLike {
